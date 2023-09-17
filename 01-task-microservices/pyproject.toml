@@ -12,6 +12,7 @@ start = "app.main:start"
 python = "^3.11"
 fastapi = {extras = ["all"], version = "^0.103.1"}
 sqlalchemy = "^2.0.20"
+psycopg2 = "^2.9.7"
 
 
 [build-system]

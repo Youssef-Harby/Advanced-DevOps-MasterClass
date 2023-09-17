@@ -23,6 +23,7 @@ This is a FastAPI application for managing books. this is a task from the course
    ```bash
    git clone https://github.com/Youssef-Harby/Advanced-DevOps-MasterClass.git
    cd Advanced-DevOps-MasterClass/01-task-microservices
+   cp .env.example .env # and change to your own values
    ```
 
 2. **Install Dependencies**

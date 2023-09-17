@@ -1,0 +1,66 @@
+name: Docker build and push
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*.*.*"
+
+jobs:
+  docker:
+    runs-on: ubuntu-22.04
+
+    env:
+      DOCKER_TAG: latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3.3.2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract tag name if exists
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            DOCKER_TAG=$(echo ${GITHUB_REF#refs/tags/})
+            echo "DOCKER_TAG=${DOCKER_TAG}" >> $GITHUB_ENV
+            echo "Current Tag inside if: ${DOCKER_TAG}"
+          fi
+          echo Current Tag is :  ${{ env.DOCKER_TAG }} 🐳
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: 01-task-microservices/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/youssef-harby/advanced-devops-masterclass:${{ github.ref == 'refs/heads/main' && 'latest' || github.ref_name }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      # Post-process cache (due to Buildx issue)
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

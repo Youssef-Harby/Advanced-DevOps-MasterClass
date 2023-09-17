@@ -17,6 +17,11 @@ RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev
 
 FROM python:3.11-slim-buster as runtime
 
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+
 RUN pip install poetry==1.4.2
 
 ENV VIRTUAL_ENV=/app/.venv \

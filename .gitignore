@@ -2,3 +2,8 @@ __pycache__
 venv/
 # .env
 *.db
+*.zip
+*.pdf
+.DS_Store
+URLS.md
+.env
