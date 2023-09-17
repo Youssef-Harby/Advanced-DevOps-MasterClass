@@ -36,9 +36,14 @@ jobs:
           file: 01-task-microservices/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: ghcr.io/youssef-harby/advanced-devops-masterclass:temp
+          tags: ghcr.io/youssef-harby/advanced-devops-masterclass:${{ github.ref == 'refs/heads/main' && 'latest' || github.ref_name }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3.1.3
+        with:
+          name: advanced-devops-masterclass
+          path: /tmp/advanced-devops-masterclass.tar
 
   push:
     needs: build
@@ -48,8 +53,11 @@ jobs:
       DOCKER_TAG: latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: advanced-devops-masterclass
+          path: /tmp
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -57,6 +65,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3.3.2
+        with:
+          path: /tmp/.buildx-cache-new
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
       - name: Extract tag name if exists
         run: |
@@ -70,8 +86,10 @@ jobs:
       - name: Push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: 01-task-microservices
-          file: 01-task-microservices/Dockerfile
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache-new
+          #   context: 01-task-microservices
+          #   file: 01-task-microservices/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/youssef-harby/advanced-devops-masterclass:${{ github.ref == 'refs/heads/main' && 'latest' || github.ref_name }}
